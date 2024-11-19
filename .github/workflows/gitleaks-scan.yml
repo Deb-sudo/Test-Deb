@@ -16,10 +16,11 @@ jobs:
 
     - name: Install Gitleaks
       run: |
-        curl -sSL https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks-linux-amd64 -o gitleaks
+        GITLEAKS_URL=$(curl -s https://api.github.com/repos/gitleaks/gitleaks/releases/latest | grep browser_download_url | grep linux-amd64 | cut -d '"' -f 4)
+        curl -sSL "$GITLEAKS_URL" -o gitleaks
         chmod +x gitleaks
         sudo mv gitleaks /usr/local/bin/gitleaks
-        gitleaks version
+        /usr/local/bin/gitleaks version
 
     - name: Run Gitleaks Scan
       run: |
