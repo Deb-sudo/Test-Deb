@@ -1,21 +1,20 @@
-name: Gitleaks Scan Every 15 Minutes
+name: "Gitleaks Scan"
 
 on:
   schedule:
-    - cron: "* * * * *" # Run every 5 minutes
+    - cron: "*/1 * * * *" # Run every minute
 
 jobs:
-  scan:
-    name: Gitleaks Scan
+  gitleaks_scan:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
 
-      - name: Run Gitleaks
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }} # Required for organizations
+      - name: Install Gitleaks
+        run: |
+          sudo apt update
+          sudo apt install -y gitleaks
+      - name: Gitleaks Scan
+        run: |
+          gitleaks --repo . --verbose 
