@@ -1,20 +1,32 @@
-name: "Gitleaks Scan"
+name: Gitleaks Scan
 
+# Schedule the action to run every minute
 on:
   schedule:
-    - cron: "*/1 * * * *" # Run every minute
+    - cron: "*/1 * * * *" # Every minute
+  workflow_dispatch: # Allows manual triggering
 
 jobs:
-  gitleaks_scan:
+  gitleaks-scan:
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
 
-      - name: Install Gitleaks
-        run: |
-          sudo apt update
-          sudo apt install -y gitleaks
-      - name: Gitleaks Scan
-        run: |
-          gitleaks --repo . --verbose 
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Install Gitleaks
+      run: |
+        curl -sSL https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks-linux-amd64 -o gitleaks
+        chmod +x gitleaks
+        sudo mv gitleaks /usr/local/bin/
+
+    - name: Run Gitleaks Scan
+      run: |
+        gitleaks detect --source . --report-path gitleaks-report.json --verbose
+
+    - name: Upload Gitleaks Report
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: gitleaks-report
+        path: gitleaks-report.json
