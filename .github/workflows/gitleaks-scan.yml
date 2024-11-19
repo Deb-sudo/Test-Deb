@@ -16,20 +16,32 @@ jobs:
 
     - name: Install Gitleaks
       run: |
-        # Fetch the latest release URL for Gitleaks and print the raw response for debugging
+        # Fetch the latest release data from GitHub API
         RESPONSE=$(curl -s https://api.github.com/repos/gitleaks/gitleaks/releases/latest)
         echo "GitHub API response: $RESPONSE"
+
+        # Check if jq is installed, and if not, install it
+        if ! command -v jq &> /dev/null
+        then
+          echo "jq not found, installing it..."
+          sudo apt-get update && sudo apt-get install -y jq
+        fi
         
-        # Use jq to extract the download URL for the linux-amd64 release
-        GITLEAKS_URL=$(echo "$RESPONSE" | jq -r '.assets[] | select(.name | contains("linux-amd64")) | .browser_download_url')
+        # Extract and list all available assets and their URLs
+        echo "Listing all available assets..."
+        ASSETS=$(echo "$RESPONSE" | jq -r '.assets[] | {name, browser_download_url}')
+        echo "Assets available: $ASSETS"
+        
+        # Extract the URL for the linux-amd64 binary (you may need to adjust the filter if it doesn't match)
+        GITLEAKS_URL=$(echo "$ASSETS" | grep "linux-amd64" | awk -F '": "' '{print $2}' | tr -d '"')
         echo "Gitleaks download URL: $GITLEAKS_URL"
-        
-        # Check if GITLEAKS_URL is empty and exit if it is
+
+        # If the URL is still empty, fail the step
         if [ -z "$GITLEAKS_URL" ]; then
           echo "Error: Gitleaks download URL not found!"
           exit 1
         fi
-        
+
         # Download and install Gitleaks
         curl -sSL "$GITLEAKS_URL" -o gitleaks
         chmod +x gitleaks
