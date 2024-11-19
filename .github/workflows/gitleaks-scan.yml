@@ -16,11 +16,25 @@ jobs:
 
     - name: Install Gitleaks
       run: |
-        # Fetch the latest release URL for Gitleaks
-        GITLEAKS_URL=$(curl -s https://api.github.com/repos/gitleaks/gitleaks/releases/latest | jq -r '.assets[] | select(.name | contains("linux-amd64")) | .browser_download_url')
+        # Fetch the latest release URL for Gitleaks and print the raw response for debugging
+        RESPONSE=$(curl -s https://api.github.com/repos/gitleaks/gitleaks/releases/latest)
+        echo "GitHub API response: $RESPONSE"
+        
+        # Use jq to extract the download URL for the linux-amd64 release
+        GITLEAKS_URL=$(echo "$RESPONSE" | jq -r '.assets[] | select(.name | contains("linux-amd64")) | .browser_download_url')
+        echo "Gitleaks download URL: $GITLEAKS_URL"
+        
+        # Check if GITLEAKS_URL is empty and exit if it is
+        if [ -z "$GITLEAKS_URL" ]; then
+          echo "Error: Gitleaks download URL not found!"
+          exit 1
+        fi
+        
+        # Download and install Gitleaks
         curl -sSL "$GITLEAKS_URL" -o gitleaks
         chmod +x gitleaks
         sudo mv gitleaks /usr/local/bin/gitleaks
+        
         # Verify the Gitleaks version
         /usr/local/bin/gitleaks version
 
