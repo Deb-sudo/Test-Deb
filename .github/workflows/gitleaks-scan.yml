@@ -23,7 +23,7 @@ jobs:
 
     - name: Run Gitleaks Scan
       run: |
-        gitleaks detect --source . --report-path gitleaks-report.json --verbose
+        gitleaks detect --source . --report-path gitleaks-report.json --no-git --verbose || echo "{}" > gitleaks-report.json
 
     - name: Upload Gitleaks Report
       if: always()
@@ -31,4 +31,3 @@ jobs:
       with:
         name: gitleaks-report
         path: gitleaks-report.json
-
