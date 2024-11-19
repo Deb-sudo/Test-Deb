@@ -18,7 +18,8 @@ jobs:
       run: |
         curl -sSL https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks-linux-amd64 -o gitleaks
         chmod +x gitleaks
-        sudo mv gitleaks /usr/local/bin/
+        sudo mv gitleaks /usr/local/bin/gitleaks
+        gitleaks version
 
     - name: Run Gitleaks Scan
       run: |
@@ -30,3 +31,4 @@ jobs:
       with:
         name: gitleaks-report
         path: gitleaks-report.json
+
