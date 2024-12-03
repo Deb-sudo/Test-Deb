@@ -1,63 +1,13 @@
-name: Gitleaks Scan
-
-# Schedule the action to run every minute
-on:
-  schedule:
-    - cron: "*/1 * * * *" # Every minute
-  workflow_dispatch: # Allows manual triggering
-
+name: gitleaks
+on: [pull_request, push, workflow_dispatch]
 jobs:
-  gitleaks-scan:
+  scan:
+    name: gitleaks
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
-
-    - name: Install Gitleaks
-      run: |
-        # Fetch the latest release data from GitHub API
-        RESPONSE=$(curl -s https://api.github.com/repos/gitleaks/gitleaks/releases/latest)
-        echo "GitHub API response: $RESPONSE"
-
-        # Check if jq is installed, and if not, install it
-        if ! command -v jq &> /dev/null
-        then
-          echo "jq not found, installing it..."
-          sudo apt-get update && sudo apt-get install -y jq
-        fi
-        
-        # Extract and list all available assets and their URLs
-        echo "Listing all available assets..."
-        ASSETS=$(echo "$RESPONSE" | jq -r '.assets[] | {name, browser_download_url}')
-        echo "Assets available: $ASSETS"
-        
-        # Extract the URL for the linux-amd64 binary (you may need to adjust the filter if it doesn't match)
-        GITLEAKS_URL=$(echo "$ASSETS" | grep "linux-amd64" | awk -F '": "' '{print $2}' | tr -d '"')
-        echo "Gitleaks download URL: $GITLEAKS_URL"
-
-        # If the URL is still empty, fail the step
-        if [ -z "$GITLEAKS_URL" ]; then
-          echo "Error: Gitleaks download URL not found!"
-          exit 1
-        fi
-
-        # Download and install Gitleaks
-        curl -sSL "$GITLEAKS_URL" -o gitleaks
-        chmod +x gitleaks
-        sudo mv gitleaks /usr/local/bin/gitleaks
-        
-        # Verify the Gitleaks version
-        /usr/local/bin/gitleaks version
-
-    - name: Run Gitleaks Scan
-      run: |
-        # Run Gitleaks and generate a report
-        gitleaks detect --source . --report-path gitleaks-report.json --no-git --verbose || echo "{}" > gitleaks-report.json
-
-    - name: Upload Gitleaks Report
-      if: always()
-      uses: actions/upload-artifact@v3
-      with:
-        name: gitleaks-report
-        path: gitleaks-report.json
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
